@@ -23,6 +23,7 @@ pygame.init()
 WIDTH, HEIGHT = 800, 600
 FPS = 60
 pygame.display.set_caption("🚀 Space Escape")
+metQunt = 8
 
 # ----------------------------------------------------------
 # 🧩 SEÇÃO DE ASSETS (os alunos podem trocar os arquivos aqui)
@@ -90,7 +91,7 @@ player_rect = player_img.get_rect(center=(WIDTH // 2, HEIGHT - 60))
 player_speed = 7
 
 meteor_list = []
-for _ in range(5):
+for _ in range(metQunt):
     x = random.randint(0, WIDTH - 40)
     y = random.randint(-500, -40)
     meteor_list.append(pygame.Rect(x, y, 40, 40))
@@ -100,78 +101,106 @@ score = 0
 lives = 3
 font = pygame.font.Font(None, 36)
 clock = pygame.time.Clock()
-running = True
 
 # ----------------------------------------------------------
 # 🕹️ LOOP PRINCIPAL
 # ----------------------------------------------------------
-while running:
-    clock.tick(FPS)
-    screen.blit(background, (0, 0))
+def fase1():
+    global score, lives
 
-    # --- Eventos ---
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    score = 0
+    lives = 3
+    running = True
+    while running:
+        clock.tick(FPS)
+        screen.blit(background, (0, 0))
 
-    # --- Movimento do jogador ---
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT] and player_rect.left > 0:
-        player_rect.x -= player_speed
-    if keys[pygame.K_RIGHT] and player_rect.right < WIDTH:
-        player_rect.x += player_speed
-    if keys[pygame.K_ESCAPE]:
-        running = False
-
-    # --- Movimento dos meteoros ---
-    for meteor in meteor_list:
-        meteor.y += meteor_speed
-
-        # Saiu da tela → reposiciona e soma pontos
-        if meteor.y > HEIGHT:
-            meteor.y = random.randint(-100, -40)
-            meteor.x = random.randint(0, WIDTH - meteor.width)
-            score += 1
-            if sound_point:
-                sound_point.play()
-
-        # Colisão
-        if meteor.colliderect(player_rect):
-            lives -= 1
-            meteor.y = random.randint(-100, -40)
-            meteor.x = random.randint(0, WIDTH - meteor.width)
-            if sound_hit:
-                sound_hit.play()
-            if lives <= 0:
+        # --- Eventos ---
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 running = False
 
-    # --- Desenha tudo ---
-    screen.blit(player_img, player_rect)
-    for meteor in meteor_list:
-        screen.blit(meteor_img, meteor)
+        # --- Movimento do jogador ---
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and player_rect.left > 0:
+            player_rect.x -= player_speed
+        if keys[pygame.K_RIGHT] and player_rect.right < WIDTH:
+            player_rect.x += player_speed
+        if keys[pygame.K_ESCAPE]:
+            running = False
 
-    # --- Exibe pontuação e vidas ---
-    text = font.render(f"Pontos: {score}   Vidas: {lives}", True, WHITE)
-    screen.blit(text, (10, 10))
+        # --- Movimento dos meteoros ---
+        for meteor in meteor_list:
+            meteor.y += meteor_speed
 
-    pygame.display.flip()
+            # Saiu da tela → reposiciona e soma pontos
+            if meteor.y > HEIGHT:
+                meteor.y = random.randint(-100, -40)
+                meteor.x = random.randint(0, WIDTH - meteor.width)
+                score += 1
+                if sound_point:
+                    sound_point.play()
+
+            # Colisão
+            if meteor.colliderect(player_rect):
+                lives -= 1
+                meteor.y = random.randint(-100, -40)
+                meteor.x = random.randint(0, WIDTH - meteor.width)
+                if sound_hit:
+                    sound_hit.play()
+                if lives <= 0:
+                    running = False
+
+        # --- Desenha tudo ---
+        screen.blit(player_img, player_rect)
+        for meteor in meteor_list:
+            screen.blit(meteor_img, meteor)
+
+        # --- Exibe pontuação e vidas ---
+        text = font.render(f"Pontos: {score}   Vidas: {lives}", True, WHITE)
+        screen.blit(text, (10, 10))
+
+        pygame.display.flip()
+    telaFim()
 
 # ----------------------------------------------------------
 # 🏁 TELA DE FIM DE JOGO
 # ----------------------------------------------------------
-pygame.mixer.music.stop()
-screen.fill((20, 20, 20))
-end_text = font.render("Fim de jogo! Pressione qualquer tecla para sair.", True, WHITE)
+def telaFim():
+    pygame.mixer.music.stop()
+    screen.fill((20, 20, 20))
+    end_text = font.render("Fim de jogo! Pressione qualquer tecla para sair.", True, WHITE)
 
-final_score = font.render(f"Pontuação final: {score}", True, WHITE)
-screen.blit(end_text, (150, 260))
-screen.blit(final_score, (300, 300))
-pygame.display.flip()
+    final_score = font.render(f"Pontuação final: {score}", True, WHITE)
+    screen.blit(end_text, (150, 260))
+    screen.blit(final_score, (300, 300))
+    pygame.display.flip()
 
-waiting = True
-while waiting:
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+                waiting = False
+
+#Loop do menu
+while True:
+    clock.tick(FPS)
+    screen.blit(background, (0, 0))
+
+    texto = font.render("Digite 1 para continuar", True, WHITE)
+    screen.blit(texto, (300, 230))
+
+    escape = False
     for event in pygame.event.get():
-        if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
-            waiting = False
+        if event.type == pygame.QUIT or pygame.key.get_pressed()[pygame.K_ESCAPE]:
+            escape = True
+    if escape:
+        break
+    
+    if pygame.key.get_pressed()[pygame.K_1]:
+        fase1()
+    
+
+    pygame.display.flip()
 
 pygame.quit()
