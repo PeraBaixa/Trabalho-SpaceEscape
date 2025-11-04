@@ -23,7 +23,7 @@ pygame.init()
 WIDTH, HEIGHT = 800, 600
 FPS = 60
 pygame.display.set_caption("🚀 Space Escape")
-metQunt = 8
+metQunt = 5
 
 # ----------------------------------------------------------
 # 🧩 SEÇÃO DE ASSETS (os alunos podem trocar os arquivos aqui)
@@ -32,7 +32,8 @@ metQunt = 8
 # e troque apenas os nomes abaixo.
 
 ASSETS = {
-    "background": "fundo_espacial.png",                         # imagem de fundo
+    "backmenu": "Background_menu.png",                                             # imagem de fundo do menu
+    "background": "fundo_espacial.png",                         # imagem de fundo do primeiro nível
     "player": "nave001.png",                                    # imagem da nave
     "meteor": "meteoro001.png",                                 # imagem do meteoro
     "sound_point": "classic-game-action-positive-5-224402.mp3", # som ao desviar com sucesso
@@ -65,7 +66,7 @@ def load_image(filename, fallback_color, size=None):
         return surf
 
 # Carrega imagens
-background = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
+background = load_image(ASSETS["backmenu"], WHITE, (WIDTH, HEIGHT))
 player_img = load_image(ASSETS["player"], BLUE, (80, 60))
 meteor_img = load_image(ASSETS["meteor"], RED, (40, 40))
 
@@ -95,11 +96,11 @@ for _ in range(metQunt):
     x = random.randint(0, WIDTH - 40)
     y = random.randint(-500, -40)
     meteor_list.append(pygame.Rect(x, y, 40, 40))
-meteor_speed = 5
 
 score = 0
 lives = 3
 font = pygame.font.Font(None, 36)
+fontmenu = pygame.font.Font(None, 50)
 clock = pygame.time.Clock()
 
 # ----------------------------------------------------------
@@ -107,13 +108,18 @@ clock = pygame.time.Clock()
 # ----------------------------------------------------------
 def fase1():
     global score, lives
+    meteor_speed = 5
 
     score = 0
     lives = 3
+    back = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
+    fontpausa = pygame.font.Font(None, 42)
+    pausado = False
+
     running = True
     while running:
         clock.tick(FPS)
-        screen.blit(background, (0, 0))
+        screen.blit(back, (0, 0))
 
         # --- Eventos ---
         for event in pygame.event.get():
@@ -122,34 +128,40 @@ def fase1():
 
         # --- Movimento do jogador ---
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and player_rect.left > 0:
+        if keys[pygame.K_LEFT] and player_rect.left > 0 and not pausado:
             player_rect.x -= player_speed
-        if keys[pygame.K_RIGHT] and player_rect.right < WIDTH:
+        if keys[pygame.K_RIGHT] and player_rect.right < WIDTH and not pausado:
             player_rect.x += player_speed
+        #Tela de pausa
         if keys[pygame.K_ESCAPE]:
-            running = False
+            if pausado:
+                pausado = False
+            else:
+                pausado = True
+
 
         # --- Movimento dos meteoros ---
-        for meteor in meteor_list:
-            meteor.y += meteor_speed
+        if not pausado:
+            for meteor in meteor_list:
+                meteor.y += meteor_speed
 
-            # Saiu da tela → reposiciona e soma pontos
-            if meteor.y > HEIGHT:
-                meteor.y = random.randint(-100, -40)
-                meteor.x = random.randint(0, WIDTH - meteor.width)
-                score += 1
-                if sound_point:
-                    sound_point.play()
+                # Saiu da tela → reposiciona e soma pontos
+                if meteor.y > HEIGHT:
+                    meteor.y = random.randint(-100, -40)
+                    meteor.x = random.randint(0, WIDTH - meteor.width)
+                    score += 1
+                    if sound_point:
+                        sound_point.play()
 
-            # Colisão
-            if meteor.colliderect(player_rect):
-                lives -= 1
-                meteor.y = random.randint(-100, -40)
-                meteor.x = random.randint(0, WIDTH - meteor.width)
-                if sound_hit:
-                    sound_hit.play()
-                if lives <= 0:
-                    running = False
+                # Colisão
+                if meteor.colliderect(player_rect):
+                    lives -= 1
+                    meteor.y = random.randint(-100, -40)
+                    meteor.x = random.randint(0, WIDTH - meteor.width)
+                    if sound_hit:
+                        sound_hit.play()
+                    if lives <= 0:
+                        running = False
 
         # --- Desenha tudo ---
         screen.blit(player_img, player_rect)
@@ -160,9 +172,109 @@ def fase1():
         text = font.render(f"Pontos: {score}   Vidas: {lives}", True, WHITE)
         screen.blit(text, (10, 10))
 
+        #Tela de pausa
+        if pausado:
+            pausa = fontpausa.render("Pausa", True, WHITE)
+            screen.blit(pausa, (int(WIDTH * 0.2), int(HEIGHT * 0.4)))
+
+        #Aumenta a dificuldade automaticamente
+        if score > 50 and score < 75:
+            meteor_speed = 6
+        elif score >= 75 and score < 100:
+            meteor_speed = 7
+        elif score >= 150 and score < 200:
+            meteor_speed = 8
+        elif score >= 200 and score < 300:
+            meteor_speed = 9
+        elif score >= 300:
+            meteor_speed = 10
+
         pygame.display.flip()
     telaFim()
 
+def fase2():
+    global score, lives
+    meteor_speed = 5
+
+    score = 0
+    lives = 3
+    back = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
+    fontpausa = pygame.font.Font(None, 42)
+    pausado = False
+
+    venceu = False
+    relogio = 300
+
+    running = True
+    while running:
+        clock.tick(FPS)
+        screen.blit(back, (0, 0))
+
+        # --- Eventos ---
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        # --- Movimento do jogador ---
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and player_rect.left > 0 and not pausado:
+            player_rect.x -= player_speed
+        if keys[pygame.K_RIGHT] and player_rect.right < WIDTH and not pausado:
+            player_rect.x += player_speed
+        #Tela de pausa
+        if keys[pygame.K_ESCAPE]:
+            if pausado:
+                pausado = False
+            else:
+                pausado = True
+
+
+        # --- Movimento dos meteoros ---
+        if not pausado:
+            for meteor in meteor_list:
+                meteor.y += meteor_speed
+
+                # Saiu da tela → reposiciona e soma pontos
+                if meteor.y > HEIGHT:
+                    meteor.y = random.randint(-100, -40)
+                    meteor.x = random.randint(0, WIDTH - meteor.width)
+                    score += 1
+                    if sound_point:
+                        sound_point.play()
+
+                # Colisão
+                if meteor.colliderect(player_rect):
+                    lives -= 1
+                    meteor.y = random.randint(-100, -40)
+                    meteor.x = random.randint(0, WIDTH - meteor.width)
+                    if sound_hit:
+                        sound_hit.play()
+                    if lives <= 0:
+                        running = False
+
+        # --- Desenha tudo ---
+        screen.blit(player_img, player_rect)
+        for meteor in meteor_list:
+            screen.blit(meteor_img, meteor)
+
+        # --- Exibe pontuação e vidas ---
+        text = font.render(f"Pontos: {score}\\200   Vidas: {lives}", True, WHITE)
+        screen.blit(text, (10, 10))
+        # Coloca o relógio na tela
+        relog = font.render(f"{relogio}", True, WHITE)
+        relogloc = relog.get_rect()
+        relogloc.topright = (WIDTH, 0)
+        screen.blit(relog, relogloc)
+
+        #Tela de pausa
+        if pausado:
+            pausa = fontpausa.render("Pausa", True, WHITE)
+            screen.blit(pausa, (int(WIDTH * 0.2), int(HEIGHT * 0.4)))
+
+        pygame.display.flip()
+
+    if venceu:
+        pass
 # ----------------------------------------------------------
 # 🏁 TELA DE FIM DE JOGO
 # ----------------------------------------------------------
@@ -183,23 +295,65 @@ def telaFim():
                 waiting = False
 
 #Loop do menu
+opt = 0
+lig = False
 while True:
-    clock.tick(FPS)
+    lig = (False if lig else True)
+    clock.tick(15)
     screen.blit(background, (0, 0))
 
-    texto = font.render("Digite 1 para continuar", True, WHITE)
-    screen.blit(texto, (300, 230))
+    prim = fontmenu.render("Fase 1", True, WHITE)
+    segu = fontmenu.render("Fase 2", True, WHITE)
+    terc = fontmenu.render("Fase 3", True, WHITE)
+    sair = fontmenu.render("Sair", True, WHITE)
+    screen.blit(prim, (320, 180))
+    screen.blit(segu, (320, 230))
+    screen.blit(terc, (320, 280))
+    screen.blit(sair, (320, 330))
+
+    rectopt = None
+    match opt:
+        case 0:
+            rectopt = prim.get_rect()
+            rectopt.topleft = (320, 180)
+        case 1:
+            rectopt = segu.get_rect()
+            rectopt.topleft = (320, 230)
+        case 2:
+            rectopt = terc.get_rect()
+            rectopt.topleft = (320, 280)
+        case 3:
+            rectopt = sair.get_rect()
+            rectopt.topleft = (320, 330)
+    if lig:
+        pygame.draw.rect(screen, (255, 255, 255, 20), rectopt)
 
     escape = False
     for event in pygame.event.get():
-        if event.type == pygame.QUIT or pygame.key.get_pressed()[pygame.K_ESCAPE]:
+        if event.type == pygame.QUIT:
             escape = True
     if escape:
         break
     
-    if pygame.key.get_pressed()[pygame.K_1]:
-        fase1()
-    
+    if pygame.key.get_pressed()[pygame.K_DOWN]:
+        opt += 1
+        if opt > 3:
+            opt = 0
+    if pygame.key.get_pressed()[pygame.K_UP]:
+        opt -= 1
+        if opt < 0: opt = 3
+
+    if pygame.key.get_pressed()[pygame.K_RETURN] or pygame.key.get_pressed()[pygame.K_KP_ENTER]:
+        match opt:
+            case 0:
+                fase1()
+            case 1:
+                fase2()
+            case 2:
+                pass
+            case 3:
+                break
+
 
     pygame.display.flip()
 
