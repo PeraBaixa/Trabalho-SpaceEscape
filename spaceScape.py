@@ -82,7 +82,7 @@ sound_hit = load_sound(ASSETS["sound_hit"])
 # Música de fundo (opcional)
 if os.path.exists(ASSETS["music"]):
     pygame.mixer.music.load(ASSETS["music"])
-    pygame.mixer.music.set_volume(0.1)
+    pygame.mixer.music.set_volume(0)
     pygame.mixer.music.play(-1)  # loop infinito
 
 # ----------------------------------------------------------
@@ -196,6 +196,7 @@ def fase2():
     global score, lives
     meteor_speed = 5
 
+    objetivo = 10 #alvo de score
     score = 0
     lives = 3
     back = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
@@ -204,12 +205,13 @@ def fase2():
 
     venceu = False
     relogio = 300
+    frames = 1
 
     running = True
     while running:
         clock.tick(FPS)
         screen.blit(back, (0, 0))
-
+        
         # --- Eventos ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -241,6 +243,7 @@ def fase2():
                     score += 1
                     if sound_point:
                         sound_point.play()
+                        pygame.mixer.music.set_volume(0)
 
                 # Colisão
                 if meteor.colliderect(player_rect):
@@ -258,23 +261,39 @@ def fase2():
             screen.blit(meteor_img, meteor)
 
         # --- Exibe pontuação e vidas ---
-        text = font.render(f"Pontos: {score}\\200   Vidas: {lives}", True, WHITE)
+        text = font.render(f"Pontos: {score}\\{objetivo}   Vidas: {lives}", True, WHITE)
         screen.blit(text, (10, 10))
         # Coloca o relógio na tela
         relog = font.render(f"{relogio}", True, WHITE)
         relogloc = relog.get_rect()
         relogloc.topright = (WIDTH, 0)
         screen.blit(relog, relogloc)
+        frames += 1
+
+        #decrementa o relógio
+        if frames == 60:
+            relogio -= 1
+            frames = 1
 
         #Tela de pausa
         if pausado:
             pausa = fontpausa.render("Pausa", True, WHITE)
             screen.blit(pausa, (int(WIDTH * 0.2), int(HEIGHT * 0.4)))
+        
+        if relogio == 0:
+            running = False
+
+        if score >= objetivo:
+            venceu = True
+            running = False
 
         pygame.display.flip()
 
+    
     if venceu:
-        pass
+        telaRes(f"Você cumpriu o desafio com {relogio} segundos restando", True)
+    else:
+        telaRes(f"O tempo acabou faltando {objetivo-score} para vencer")
 # ----------------------------------------------------------
 # 🏁 TELA DE FIM DE JOGO
 # ----------------------------------------------------------
@@ -294,14 +313,48 @@ def telaFim():
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
                 waiting = False
 
+def telaRes(msg, vit):
+    vicDer = ("VITÓRIA" if vit else "DERROTA")
+
+    pygame.mixer.music.stop()
+    screen.fill((20, 20, 20))
+    fonteMenor = pygame.font.Font(None, 22)
+    qlqtTecla = fonteMenor.render("Pressione qualquer tecla para sair", True, WHITE)
+    loc = qlqtTecla.get_rect()
+    loc.center = (WIDTH//2, HEIGHT-30)
+    screen.blit(qlqtTecla, loc)
+
+    fonteGrande = pygame.font.Font(None, 60)
+    vitoria = fonteGrande.render(vicDer, True, WHITE)
+    loc = vitoria.get_rect()
+    loc.center = (WIDTH//2, HEIGHT//2)
+    screen.blit(vitoria, loc)
+
+    mensagem = font.render(msg, True, WHITE)
+    loc = mensagem.get_rect()
+    loc.center = (WIDTH//2, HEIGHT//2+60)
+    screen.blit(mensagem, loc)
+    pygame.display.flip()
+
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+                waiting = False
+
 #Loop do menu
 opt = 0
-lig = False
+lig = [False, 1]
+
 while True:
-    lig = (False if lig else True)
-    clock.tick(15)
+    clock.tick(10)
     screen.blit(background, (0, 0))
 
+    if lig[1] == 5:
+        lig[0] = (False if lig[0] else True)
+        lig[1] = 1
+
+    lig[1] += 1
     prim = fontmenu.render("Fase 1", True, WHITE)
     segu = fontmenu.render("Fase 2", True, WHITE)
     terc = fontmenu.render("Fase 3", True, WHITE)
@@ -325,7 +378,7 @@ while True:
         case 3:
             rectopt = sair.get_rect()
             rectopt.topleft = (320, 330)
-    if lig:
+    if lig[0]:
         pygame.draw.rect(screen, (255, 255, 255, 20), rectopt)
 
     escape = False
