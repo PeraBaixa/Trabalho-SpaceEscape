@@ -9,6 +9,9 @@
 ##############################################################
 ### Prof. Filipo Novo Mor - github.com/ProfessorFilipo     ###
 ##############################################################
+import sys
+from turtle import Screen
+import Jogador
 
 import pygame
 import random
@@ -32,7 +35,7 @@ metQunt = 5
 # e troque apenas os nomes abaixo.
 
 ASSETS = {
-    "backmenu": "Background_menu.png",                                             # imagem de fundo do menu
+    "backmenu": "Background_menu.png",                          # imagem de fundo do menu
     "background": "fundo_espacial.png",                         # imagem de fundo do primeiro nível
     "player": "nave001.png",                                    # imagem da nave
     "meteor": "meteoro001.png",                                 # imagem do meteoro
@@ -103,13 +106,82 @@ font = pygame.font.Font(None, 36)
 fontmenu = pygame.font.Font(None, 50)
 clock = pygame.time.Clock()
 
+"""
+#bloco de códigos pra testes de tela
+back = load_image(ASSETS['background'], WHITE, (WIDTH//2, HEIGHT))
+
+player1loc = player_img.get_rect(center=(WIDTH//4, HEIGHT-60))
+player2loc = player_img.get_rect(center=(WIDTH*3//4, HEIGHT-60))
+
+vidas = [3, 3]
+points = [0, 0]
+
+r = random.randint
+met1 = [pygame.Rect(r(0, WIDTH//2-50), r(-500, -40), 40, 40) for _ in range(metQunt)]
+met2 = [pygame.Rect(r(WIDTH//2+40, WIDTH-40), r(-500, -40), 40, 40) for _ in range(metQunt)]
+
+
+while True:
+    clock.tick(FPS)
+    screen.blit(back, (0, 0))
+    screen.blit(back, (WIDTH // 2, 0))
+    pygame.draw.line(screen, (0, 0, 0), (WIDTH // 2, 0), (WIDTH // 2, HEIGHT), 4)
+
+    screen.blit(player_img, player1loc)
+    screen.blit(player_img, player2loc)
+
+    placar = [
+        font.render(f"Pontos: {points[0]}   Vidas: {vidas[0]}", True, WHITE),
+        font.render(f"Pontos: {points[1]}   Vidas: {vidas[1]}", True, WHITE)
+    ]
+    screen.blit(placar[0], (10, 10))
+    screen.blit(placar[1], (WIDTH//2+10, 10))
+
+    for meteoro in met1:
+        screen.blit(meteor_img, meteoro)
+
+    for meteoro in met2:
+        screen.blit(meteor_img, meteoro)
+
+    #controla o movimento dos jogadores:
+    #Player 1, na tela da esquerda
+    if pygame.key.get_pressed()[pygame.K_a] and player1loc.x > 0:
+        player1loc.x -= player_speed
+    if pygame.key.get_pressed()[pygame.K_d] and player1loc.x < WIDTH//2-80:
+        player1loc.x += player_speed
+
+    #Player 2, na tela da direita
+    if pygame.key.get_pressed()[pygame.K_LEFT] and player2loc.x > WIDTH//2:
+        player2loc.x -= player_speed
+    if pygame.key.get_pressed()[pygame.K_RIGHT] and player2loc.x < WIDTH-80:
+        player2loc.x += player_speed
+
+    #Controla o moviemnto dos meteoros
+    for meteoro in (met1 + met2):
+        meteoro.y += 5
+
+        # Saiu da tela → reposiciona e soma pontos
+        if meteoro.y > HEIGHT:
+            meteoro.y = random.randint(-100, -40)
+            meteoro.x = random.randint(0, WIDTH - meteoro.width)
+            #score += ponto
+            if sound_point:
+                sound_point.play()
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    pygame.display.flip()"""
+
 # ----------------------------------------------------------
 # 🕹️ LOOP PRINCIPAL
 # ----------------------------------------------------------
 def fase1():
     global score, lives
     meteor_speed = 5
-
+    ponto = 1
     score = 0
     lives = 3
     back = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
@@ -149,7 +221,7 @@ def fase1():
                 if meteor.y > HEIGHT:
                     meteor.y = random.randint(-100, -40)
                     meteor.x = random.randint(0, WIDTH - meteor.width)
-                    score += 1
+                    score += ponto
                     if sound_point:
                         sound_point.play()
 
@@ -182,11 +254,15 @@ def fase1():
             meteor_speed = 6
         elif score >= 75 and score < 100:
             meteor_speed = 7
+            ponto = 2
         elif score >= 150 and score < 200:
             meteor_speed = 8
+            ponto = 3
         elif score >= 200 and score < 300:
             meteor_speed = 9
+            ponto = 4
         elif score >= 300:
+            ponto = 5
             meteor_speed = 10
 
         pygame.display.flip()
@@ -288,12 +364,118 @@ def fase2():
             running = False
 
         pygame.display.flip()
-
     
     if venceu:
         telaRes(f"Você cumpriu o desafio com {relogio} segundos restando", True)
     else:
-        telaRes(f"O tempo acabou faltando {objetivo-score} para vencer")
+        telaRes(f"O tempo acabou faltando {objetivo-score} pontos para vencer", False)
+
+def fase3():
+    global score, lives
+    meteor_speed = 5
+
+    score = 0
+    lives = 3
+    back = load_image(ASSETS['background'], WHITE, (WIDTH // 2, HEIGHT))
+
+    player_men = load_image(ASSETS["player"], BLUE, (40, 30))
+    player1loc = player_men.get_rect(center=(WIDTH // 4, HEIGHT - 60))
+    player2loc = player_men.get_rect(center=(WIDTH * 3 // 4, HEIGHT - 60))
+
+    vidas = [3, 3]
+    points = [0, 0]
+
+    r = random.randint
+    met1 = [pygame.Rect(r(0, WIDTH // 2 - 50), r(-500, -40), 40, 40) for _ in range(metQunt)]
+    met2 = [pygame.Rect(r(WIDTH // 2 + 40, WIDTH - 40), r(-500, -40), 40, 40) for _ in range(metQunt)]
+
+    fontpausa = pygame.font.Font(None, 42)
+    fontmet = pygame.font.Font(None, 18)
+    pausado = False
+
+    running = True
+    while running:
+        clock.tick(FPS)
+        screen.blit(back, (0, 0))
+        screen.blit(back, (WIDTH//2, 0))
+        pygame.draw.line(screen, (0, 0, 0), (WIDTH//2, 0), (WIDTH//2, HEIGHT), 4)
+
+        # --- Eventos ---
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        # controla o movimento dos jogadores:
+        # Player 1, na tela da esquerda
+        if pygame.key.get_pressed()[pygame.K_a] and player1loc.x > 0:
+            player1loc.x -= player_speed
+        if pygame.key.get_pressed()[pygame.K_d] and player1loc.x < WIDTH // 2 - 80:
+            player1loc.x += player_speed
+
+        # Player 2, na tela da direita
+        if pygame.key.get_pressed()[pygame.K_LEFT] and player2loc.x > WIDTH // 2:
+            player2loc.x -= player_speed
+        if pygame.key.get_pressed()[pygame.K_RIGHT] and player2loc.x < WIDTH - 80:
+            player2loc.x += player_speed
+
+        #Tela de pausa
+        if pygame.key.get_pressed()[pygame.K_ESCAPE]:
+            if pausado:
+                pausado = False
+            else:
+                pausado = True
+
+
+        # --- Movimento dos meteoros ---
+        if not pausado:
+            for meteor in (met1 + met2):
+                meteor.y += meteor_speed
+
+                # Saiu da tela → reposiciona e soma pontos
+                if meteor.y > HEIGHT:
+                    meteor.y = random.randint(-100, -40)
+                    meteor.x = random.randint(0, WIDTH - meteor.width)
+
+                    i = (0 if meteor in met1 else 1)
+                    points[i] +=1
+
+                    if sound_point:
+                        sound_point.play()
+
+                # Colisão
+                if meteor.colliderect(player1loc) or meteor.colliderect(player2loc):
+                    i = (0 if meteor.colliderect(player1loc) else 1)
+                    vidas[i] -= 1
+                    meteor.y = random.randint(-100, -40)
+                    meteor.x = random.randint(0, WIDTH - meteor.width)
+                    if sound_hit:
+                        sound_hit.play()
+                    if 0 in vidas:
+                        running = False
+
+        # --- Desenha tudo ---
+        screen.blit(player_men, player1loc)
+        screen.blit(player_men, player2loc)
+        for meteor in (met1 + met2):
+            screen.blit(meteor_img, meteor)
+
+        # --- Exibe pontuação e vidas ---
+        placar = [
+            fontmet.render(f"Pontos: {points[0]}   Vidas: {vidas[0]}", True, WHITE),
+            fontmet.render(f"Pontos: {points[1]}   Vidas: {vidas[1]}", True, WHITE)
+        ]
+        screen.blit(placar[0], (10, 10))
+        screen.blit(placar[1], (WIDTH // 2 + 10, 10))
+
+        #Tela de pausa
+        if pausado:
+            pausa = fontpausa.render("Pausa", True, WHITE)
+            screen.blit(pausa, (int(WIDTH * 0.2), int(HEIGHT * 0.4)))
+
+        pygame.display.flip()
+
+    telaRes(f"{"Jogador 1" if vidas[0] > 0 else "Jogador 2"} venceu!", True)
+
 # ----------------------------------------------------------
 # 🏁 TELA DE FIM DE JOGO
 # ----------------------------------------------------------
@@ -347,37 +529,33 @@ opt = 0
 lig = [False, 1]
 
 while True:
-    clock.tick(10)
+    clock.tick(12)
     screen.blit(background, (0, 0))
 
-    if lig[1] == 5:
+    if lig[1] == 6:
         lig[0] = (False if lig[0] else True)
         lig[1] = 1
 
     lig[1] += 1
-    prim = fontmenu.render("Fase 1", True, WHITE)
-    segu = fontmenu.render("Fase 2", True, WHITE)
-    terc = fontmenu.render("Fase 3", True, WHITE)
+    prim = fontmenu.render("Combate infinito", True, WHITE)
+    segu = fontmenu.render("Desafio de tempo", True, WHITE)
+    terc = fontmenu.render("Duelo entre jogadores", True, WHITE)
     sair = fontmenu.render("Sair", True, WHITE)
-    screen.blit(prim, (320, 180))
-    screen.blit(segu, (320, 230))
-    screen.blit(terc, (320, 280))
-    screen.blit(sair, (320, 330))
+    screen.blit(prim, prim.get_rect(center=(WIDTH//2, 180)))
+    screen.blit(segu, segu.get_rect(center=(WIDTH//2, 230)))
+    screen.blit(terc, terc.get_rect(center=(WIDTH//2, 280)))
+    screen.blit(sair, sair.get_rect(center=(WIDTH//2, 330)))
 
     rectopt = None
     match opt:
         case 0:
-            rectopt = prim.get_rect()
-            rectopt.topleft = (320, 180)
+            rectopt = prim.get_rect(center=(WIDTH//2, 180))
         case 1:
-            rectopt = segu.get_rect()
-            rectopt.topleft = (320, 230)
+            rectopt = segu.get_rect(center=(WIDTH//2, 230))
         case 2:
-            rectopt = terc.get_rect()
-            rectopt.topleft = (320, 280)
+            rectopt = terc.get_rect(center=(WIDTH//2, 280))
         case 3:
-            rectopt = sair.get_rect()
-            rectopt.topleft = (320, 330)
+            rectopt = sair.get_rect(center=(WIDTH//2, 330))
     if lig[0]:
         pygame.draw.rect(screen, (255, 255, 255, 20), rectopt)
 
@@ -403,7 +581,7 @@ while True:
             case 1:
                 fase2()
             case 2:
-                pass
+                fase3()
             case 3:
                 break
 
