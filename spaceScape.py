@@ -11,6 +11,9 @@
 ##############################################################
 import sys
 from turtle import Screen
+
+from pygame.time import Clock
+
 import Jogador
 
 import pygame
@@ -27,6 +30,7 @@ WIDTH, HEIGHT = 800, 600
 FPS = 60
 pygame.display.set_caption("🚀 Space Escape")
 metQunt = 5
+logado = False
 
 # ----------------------------------------------------------
 # 🧩 SEÇÃO DE ASSETS (os alunos podem trocar os arquivos aqui)
@@ -49,6 +53,7 @@ ASSETS = {
 # ----------------------------------------------------------
 # Cores para fallback (caso os arquivos não existam)
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 RED = (255, 60, 60)
 BLUE = (60, 100, 255)
 
@@ -106,74 +111,10 @@ font = pygame.font.Font(None, 36)
 fontmenu = pygame.font.Font(None, 50)
 clock = pygame.time.Clock()
 
-"""
+
 #bloco de códigos pra testes de tela
-back = load_image(ASSETS['background'], WHITE, (WIDTH//2, HEIGHT))
-
-player1loc = player_img.get_rect(center=(WIDTH//4, HEIGHT-60))
-player2loc = player_img.get_rect(center=(WIDTH*3//4, HEIGHT-60))
-
-vidas = [3, 3]
-points = [0, 0]
-
-r = random.randint
-met1 = [pygame.Rect(r(0, WIDTH//2-50), r(-500, -40), 40, 40) for _ in range(metQunt)]
-met2 = [pygame.Rect(r(WIDTH//2+40, WIDTH-40), r(-500, -40), 40, 40) for _ in range(metQunt)]
 
 
-while True:
-    clock.tick(FPS)
-    screen.blit(back, (0, 0))
-    screen.blit(back, (WIDTH // 2, 0))
-    pygame.draw.line(screen, (0, 0, 0), (WIDTH // 2, 0), (WIDTH // 2, HEIGHT), 4)
-
-    screen.blit(player_img, player1loc)
-    screen.blit(player_img, player2loc)
-
-    placar = [
-        font.render(f"Pontos: {points[0]}   Vidas: {vidas[0]}", True, WHITE),
-        font.render(f"Pontos: {points[1]}   Vidas: {vidas[1]}", True, WHITE)
-    ]
-    screen.blit(placar[0], (10, 10))
-    screen.blit(placar[1], (WIDTH//2+10, 10))
-
-    for meteoro in met1:
-        screen.blit(meteor_img, meteoro)
-
-    for meteoro in met2:
-        screen.blit(meteor_img, meteoro)
-
-    #controla o movimento dos jogadores:
-    #Player 1, na tela da esquerda
-    if pygame.key.get_pressed()[pygame.K_a] and player1loc.x > 0:
-        player1loc.x -= player_speed
-    if pygame.key.get_pressed()[pygame.K_d] and player1loc.x < WIDTH//2-80:
-        player1loc.x += player_speed
-
-    #Player 2, na tela da direita
-    if pygame.key.get_pressed()[pygame.K_LEFT] and player2loc.x > WIDTH//2:
-        player2loc.x -= player_speed
-    if pygame.key.get_pressed()[pygame.K_RIGHT] and player2loc.x < WIDTH-80:
-        player2loc.x += player_speed
-
-    #Controla o moviemnto dos meteoros
-    for meteoro in (met1 + met2):
-        meteoro.y += 5
-
-        # Saiu da tela → reposiciona e soma pontos
-        if meteoro.y > HEIGHT:
-            meteoro.y = random.randint(-100, -40)
-            meteoro.x = random.randint(0, WIDTH - meteoro.width)
-            #score += ponto
-            if sound_point:
-                sound_point.play()
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-
-    pygame.display.flip()"""
 
 # ----------------------------------------------------------
 # 🕹️ LOOP PRINCIPAL
@@ -476,6 +417,35 @@ def fase3():
 
     telaRes(f"{"Jogador 1" if vidas[0] > 0 else "Jogador 2"} venceu!", True)
 
+def logar():
+    global logado
+    nome = ""
+    while True:
+        clock.tick(12)
+        screen.blit(background, (0, 0))
+        pygame.draw.rect(screen, WHITE, (WIDTH // 4, HEIGHT // 2 - 20, WIDTH // 2, 40))
+        n = font.render(nome, True, BLACK)
+        screen.blit(n, (WIDTH // 4 + 10, HEIGHT // 2 - 12))
+
+        if True in (letra := pygame.key.get_pressed()):
+            for l in "abcdefghijklmnopqrstuvwxyz":
+                if letra[pygame.key.key_code(l)]:
+                    nome += l
+
+            if letra[pygame.K_BACKSPACE]:
+                nome = nome[:-2]
+
+            if letra[pygame.K_RETURN] and nome != "":
+                logado = True
+                Jogador.achaJog(nome)
+                break
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+
+        pygame.display.flip()
+
 # ----------------------------------------------------------
 # 🏁 TELA DE FIM DE JOGO
 # ----------------------------------------------------------
@@ -527,7 +497,7 @@ def telaRes(msg, vit):
 #Loop do menu
 opt = 0
 lig = [False, 1]
-
+fontusu = pygame.font.Font(None, 20)
 while True:
     clock.tick(12)
     screen.blit(background, (0, 0))
@@ -540,21 +510,25 @@ while True:
     prim = fontmenu.render("Combate infinito", True, WHITE)
     segu = fontmenu.render("Desafio de tempo", True, WHITE)
     terc = fontmenu.render("Duelo entre jogadores", True, WHITE)
+    logi = fontmenu.render(("Deslogar" if logado else "logar"), True, WHITE)
     sair = fontmenu.render("Sair", True, WHITE)
-    screen.blit(prim, prim.get_rect(center=(WIDTH//2, 180)))
-    screen.blit(segu, segu.get_rect(center=(WIDTH//2, 230)))
-    screen.blit(terc, terc.get_rect(center=(WIDTH//2, 280)))
+    screen.blit(prim, prim.get_rect(center=(WIDTH//2, 130)))
+    screen.blit(segu, segu.get_rect(center=(WIDTH//2, 180)))
+    screen.blit(terc, terc.get_rect(center=(WIDTH//2, 230)))
+    screen.blit(logi, logi.get_rect(center=(WIDTH//2, 280)))
     screen.blit(sair, sair.get_rect(center=(WIDTH//2, 330)))
 
     rectopt = None
     match opt:
         case 0:
-            rectopt = prim.get_rect(center=(WIDTH//2, 180))
+            rectopt = prim.get_rect(center=(WIDTH//2, 130))
         case 1:
-            rectopt = segu.get_rect(center=(WIDTH//2, 230))
+            rectopt = segu.get_rect(center=(WIDTH//2, 180))
         case 2:
-            rectopt = terc.get_rect(center=(WIDTH//2, 280))
+            rectopt = terc.get_rect(center=(WIDTH//2, 230))
         case 3:
+            rectopt = logi.get_rect(center=(WIDTH//2, 280))
+        case 4:
             rectopt = sair.get_rect(center=(WIDTH//2, 330))
     if lig[0]:
         pygame.draw.rect(screen, (255, 255, 255, 20), rectopt)
@@ -568,11 +542,11 @@ while True:
     
     if pygame.key.get_pressed()[pygame.K_DOWN]:
         opt += 1
-        if opt > 3:
+        if opt > 4:
             opt = 0
     if pygame.key.get_pressed()[pygame.K_UP]:
         opt -= 1
-        if opt < 0: opt = 3
+        if opt < 0: opt = 4
 
     if pygame.key.get_pressed()[pygame.K_RETURN] or pygame.key.get_pressed()[pygame.K_KP_ENTER]:
         match opt:
@@ -583,7 +557,20 @@ while True:
             case 2:
                 fase3()
             case 3:
+                if logado:
+                    Jogador.nome = "anônimo"
+                    Jogador.recordes = ["-","-"]
+                    Jogador.usuNovo = True
+                else:
+                    logar()
+            case 4:
                 break
+
+    #Desenha a parte do usuário
+    nick = fontusu.render((Jogador.nome if logado else "Anônimo"), True, WHITE)
+    recs = fontusu.render(f"{Jogador.recordes[0]}|{Jogador.recordes[1]}", True, WHITE)
+    screen.blit(nick, nick.get_rect(topright=(WIDTH, 0)))
+    screen.blit(recs, recs.get_rect(topright=(WIDTH, 20)))
 
 
     pygame.display.flip()
