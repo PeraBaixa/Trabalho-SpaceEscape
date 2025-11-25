@@ -54,6 +54,8 @@ ASSETS = {
 # Cores para fallback (caso os arquivos não existam)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+GREY = (127, 127, 127)
+YELLOW = (255, 255, 0)
 RED = (255, 60, 60)
 BLUE = (60, 100, 255)
 
@@ -96,17 +98,16 @@ if os.path.exists(ASSETS["music"]):
 # ----------------------------------------------------------
 # 🧠 VARIÁVEIS DE JOGO
 # ----------------------------------------------------------
-player_rect = player_img.get_rect(center=(WIDTH // 2, HEIGHT - 60))
 player_speed = 7
 
-meteor_list = []
-for _ in range(metQunt):
-    x = random.randint(0, WIDTH - 40)
-    y = random.randint(-500, -40)
-    meteor_list.append(pygame.Rect(x, y, 40, 40))
+def criaMeteoros():
+    meteor_list = []
+    for _ in range(metQunt):
+        x = random.randint(0, WIDTH - 40)
+        y = random.randint(-500, -40)
+        meteor_list.append(pygame.Rect(x, y, 40, 40))
+    return meteor_list
 
-score = 0
-lives = 3
 font = pygame.font.Font(None, 36)
 fontmenu = pygame.font.Font(None, 50)
 clock = pygame.time.Clock()
@@ -120,11 +121,14 @@ clock = pygame.time.Clock()
 # 🕹️ LOOP PRINCIPAL
 # ----------------------------------------------------------
 def fase1():
-    global score, lives
     meteor_speed = 5
+    meteor_list = criaMeteoros()
+
+    player_rect = player_img.get_rect(center=(WIDTH // 2, HEIGHT - 60))
     ponto = 1
     score = 0
     lives = 3
+
     back = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
     fontpausa = pygame.font.Font(None, 42)
     pausado = False
@@ -137,7 +141,8 @@ def fase1():
         # --- Eventos ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                sys.exit()
 
         # --- Movimento do jogador ---
         keys = pygame.key.get_pressed()
@@ -172,6 +177,7 @@ def fase1():
                     meteor.y = random.randint(-100, -40)
                     meteor.x = random.randint(0, WIDTH - meteor.width)
                     if sound_hit:
+                        pygame.mixer.music.set_volume(0)
                         sound_hit.play()
                     if lives <= 0:
                         running = False
@@ -207,15 +213,20 @@ def fase1():
             meteor_speed = 10
 
         pygame.display.flip()
-    telaFim()
+    telaFim(score)
+
+    if Jogador.recordes[0] < score:
+        Jogador.recordes[0] = score
 
 def fase2():
-    global score, lives
     meteor_speed = 5
+    meteor_list = criaMeteoros()
 
-    objetivo = 10 #alvo de score
+    player_rect = player_img.get_rect(center=(WIDTH // 2, HEIGHT - 60))
+    objetivo = 100 #alvo de score
     score = 0
     lives = 3
+
     back = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
     fontpausa = pygame.font.Font(None, 42)
     pausado = False
@@ -232,7 +243,8 @@ def fase2():
         # --- Eventos ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                sys.exit()
 
         # --- Movimento do jogador ---
         keys = pygame.key.get_pressed()
@@ -308,15 +320,13 @@ def fase2():
     
     if venceu:
         telaRes(f"Você cumpriu o desafio com {relogio} segundos restando", True)
+        if Jogador.recordes[1] > relogio:
+            Jogador.recordes[1] = relogio
     else:
         telaRes(f"O tempo acabou faltando {objetivo-score} pontos para vencer", False)
 
 def fase3():
-    global score, lives
     meteor_speed = 5
-
-    score = 0
-    lives = 3
     back = load_image(ASSETS['background'], WHITE, (WIDTH // 2, HEIGHT))
 
     player_men = load_image(ASSETS["player"], BLUE, (40, 30))
@@ -326,9 +336,8 @@ def fase3():
     vidas = [3, 3]
     points = [0, 0]
 
-    r = random.randint
-    met1 = [pygame.Rect(r(0, WIDTH // 2 - 50), r(-500, -40), 40, 40) for _ in range(metQunt)]
-    met2 = [pygame.Rect(r(WIDTH // 2 + 40, WIDTH - 40), r(-500, -40), 40, 40) for _ in range(metQunt)]
+    met1 = criaMeteoros()
+    met2 = criaMeteoros()
 
     fontpausa = pygame.font.Font(None, 42)
     fontmet = pygame.font.Font(None, 18)
@@ -344,7 +353,8 @@ def fase3():
         # --- Eventos ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                sys.exit()
 
         # controla o movimento dos jogadores:
         # Player 1, na tela da esquerda
@@ -417,11 +427,45 @@ def fase3():
 
     telaRes(f"{"Jogador 1" if vidas[0] > 0 else "Jogador 2"} venceu!", True)
 
+def recordes():
+    recs1, recs2 = Jogador.pegaRecordes()
+    fase = 1
+    fontmenor = pygame.font.Font(None, 30)
+
+    while True:
+        clock.tick(15)
+        screen.blit(background, (0, 0))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        lista = (recs1 if fase == 1 else recs2)
+        nomet = ("COMBATE INFINITO" if fase == 1 else "DESAFIO DE TEMPO")
+        titulo = font.render(f"RECORDES - {nomet}", True, WHITE)
+        screen.blit(titulo, titulo.get_rect(center=(WIDTH//2, HEIGHT//20)))
+
+        locpri = HEIGHT//20+36
+        for jog in lista:
+            linha = fontmenor.render(f"{jog["nome"]} - {jog["reco"]}", True, YELLOW)
+            screen.blit(linha, linha.get_rect(center=(WIDTH//2, locpri)))
+            locpri += 30
+
+        if pygame.key.get_pressed()[pygame.K_RIGHT]:
+            fase = 2
+        if pygame.key.get_pressed()[pygame.K_LEFT]:
+            fase = 1
+        if pygame.key.get_pressed()[pygame.K_ESCAPE]:
+            break
+
+        pygame.display.flip()
+
 def logar():
     global logado
     nome = ""
     while True:
-        clock.tick(12)
+        clock.tick(13)
         screen.blit(background, (0, 0))
         pygame.draw.rect(screen, WHITE, (WIDTH // 4, HEIGHT // 2 - 20, WIDTH // 2, 40))
         n = font.render(nome, True, BLACK)
@@ -449,7 +493,7 @@ def logar():
 # ----------------------------------------------------------
 # 🏁 TELA DE FIM DE JOGO
 # ----------------------------------------------------------
-def telaFim():
+def telaFim(score):
     pygame.mixer.music.stop()
     screen.fill((20, 20, 20))
     end_text = font.render("Fim de jogo! Pressione qualquer tecla para sair.", True, WHITE)
@@ -462,7 +506,10 @@ def telaFim():
     waiting = True
     while waiting:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
                 waiting = False
 
 def telaRes(msg, vit):
@@ -508,15 +555,17 @@ while True:
 
     lig[1] += 1
     prim = fontmenu.render("Combate infinito", True, WHITE)
-    segu = fontmenu.render("Desafio de tempo", True, WHITE)
-    terc = fontmenu.render("Duelo entre jogadores", True, WHITE)
+    segu = fontmenu.render("Desafio de tempo", True, (WHITE if Jogador.recordes[0] > 0 else GREY))
+    terc = fontmenu.render("Duelo entre jogadores", True, (WHITE if Jogador.recordes[1] < 300 else GREY))
+    reco = fontmenu.render("Recordes", True, WHITE)
     logi = fontmenu.render(("Deslogar" if logado else "logar"), True, WHITE)
     sair = fontmenu.render("Sair", True, WHITE)
     screen.blit(prim, prim.get_rect(center=(WIDTH//2, 130)))
     screen.blit(segu, segu.get_rect(center=(WIDTH//2, 180)))
     screen.blit(terc, terc.get_rect(center=(WIDTH//2, 230)))
-    screen.blit(logi, logi.get_rect(center=(WIDTH//2, 280)))
-    screen.blit(sair, sair.get_rect(center=(WIDTH//2, 330)))
+    screen.blit(reco, reco.get_rect(center=(WIDTH//2, 280)))
+    screen.blit(logi, logi.get_rect(center=(WIDTH//2, 330)))
+    screen.blit(sair, sair.get_rect(center=(WIDTH//2, 380)))
 
     rectopt = None
     match opt:
@@ -527,9 +576,11 @@ while True:
         case 2:
             rectopt = terc.get_rect(center=(WIDTH//2, 230))
         case 3:
-            rectopt = logi.get_rect(center=(WIDTH//2, 280))
+            rectopt = reco.get_rect(center=(WIDTH // 2, 280))
         case 4:
-            rectopt = sair.get_rect(center=(WIDTH//2, 330))
+            rectopt = logi.get_rect(center=(WIDTH//2, 330))
+        case 5:
+            rectopt = sair.get_rect(center=(WIDTH//2, 380))
     if lig[0]:
         pygame.draw.rect(screen, (255, 255, 255, 20), rectopt)
 
@@ -542,11 +593,16 @@ while True:
     
     if pygame.key.get_pressed()[pygame.K_DOWN]:
         opt += 1
-        if opt > 4:
+        if opt == 1 and Jogador.recordes[0] == 0: opt += 2
+        elif opt == 2 and Jogador.recordes[1] == 300: opt += 1
+        if opt > 5:
             opt = 0
+
     if pygame.key.get_pressed()[pygame.K_UP]:
         opt -= 1
-        if opt < 0: opt = 4
+        if opt == 1 and Jogador.recordes[0] == 0: opt -= 1
+        elif opt == 2 and Jogador.recordes[1] == 300: opt -= (1 if Jogador.recordes[0] != 0 else 2)
+        if opt < 0: opt = 5
 
     if pygame.key.get_pressed()[pygame.K_RETURN] or pygame.key.get_pressed()[pygame.K_KP_ENTER]:
         match opt:
@@ -557,21 +613,25 @@ while True:
             case 2:
                 fase3()
             case 3:
+                recordes()
+            case 4:
                 if logado:
                     Jogador.nome = "anônimo"
-                    Jogador.recordes = ["-","-"]
+                    Jogador.recordes = [0,300]
                     Jogador.usuNovo = True
                 else:
                     logar()
-            case 4:
+                    print(Jogador.recordes)
+            case 5:
+                if logado: Jogador.salvar()
                 break
 
     #Desenha a parte do usuário
+    recs = Jogador.recordes
     nick = fontusu.render((Jogador.nome if logado else "Anônimo"), True, WHITE)
-    recs = fontusu.render(f"{Jogador.recordes[0]}|{Jogador.recordes[1]}", True, WHITE)
+    recs = fontusu.render(f"{recs[0] if recs[0] > 0 else "-"}|{recs[1] if recs[1] < 300 else "-"}", True, WHITE)
     screen.blit(nick, nick.get_rect(topright=(WIDTH, 0)))
     screen.blit(recs, recs.get_rect(topright=(WIDTH, 20)))
-
 
     pygame.display.flip()
 
